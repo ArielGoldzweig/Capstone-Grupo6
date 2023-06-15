@@ -1,4 +1,5 @@
 import geopy.distance
+from geopy.distance import geodesic
 import pandas as pd
 import random
 import folium
@@ -9,10 +10,10 @@ from Opt2_function import distance_driver, opt2
 
 # ------------- Cargar los datos --------------
 
-df_delivery = pd.read_excel("datos/deliveries_data.xlsx")
-df_driver = pd.read_excel("datos/driver_origins_data.xlsx")
-df_center = pd.read_excel("datos/centers_data.xlsx")
-df_ecommerce = pd.read_excel("datos/e-commerce_data.xlsx")
+df_delivery = pd.read_excel("../datos/deliveries_data.xlsx")
+df_driver = pd.read_excel("../datos/driver_origins_data.xlsx")
+df_center = pd.read_excel("../datos/centers_data.xlsx")
+df_ecommerce = pd.read_excel("../datos/e-commerce_data.xlsx")
 
 
 # # ------------- Separar por dias --------------
@@ -182,9 +183,11 @@ print('TIEMPOOOO')
 print()
 driver_improve = improve_route_min_max_time(drivers, ecommerces, best_distance)
 best_distance = calculate_distance(driver_improve)
-print(f'BEST DISTANCE = {best_distance}')
+#print(f'BEST DISTANCE = {best_distance}')
+print('BEST DISTANCE = {}'.format(best_distance))
 for d in drivers:
-    print(f'{d.id} ---- tiempo {d.tiempo}')
+    #print(f'{d.id} ---- tiempo {d.tiempo}')
+    print('{} ---- tiempo {}'.format(d.id, d.tiempo))
 
 
 
@@ -212,3 +215,54 @@ for d in drivers:
 #         folium.CircleMarker(driver_improve[i].origen, color='black', radius=4, fill=True).add_to(g)
 #         folium.PolyLine(driver_improve[i].ruta, color=colors[i], weight=3, opacity=1).add_to(g)
 # g.save("simulation/maps/ecommerce_reverse_aleatory_swap_2drivers.html")
+
+contador_driver = 1
+cantidad_paquetes = 0
+lista_distancias_paquetes = []
+
+# iteracion sobre la lista drivers
+for driver in drivers:
+    print("PAQUETES DRIVER " + str(contador_driver))
+    #Creo una lista con las coordenadas que debe recorrer el driver instanciando driver.ruta
+    driver_ruta = driver.ruta
+    print("Cantidad de coordenadas: " + str(len(driver_ruta)))
+    driver_ruta.pop(0)
+    largo = len(driver_ruta)
+    print("Cantidad de paquetes por driver: " + str(largo-1))
+    cantidad_paquetes += (largo-1)
+    contador = 0
+
+    #while va iterando sobre cada paquete que tenga el driver
+    while contador < largo-1:
+        distance_total = 0
+        #for va calculando la distancia total que recorre el paquete 
+        # desde que se recoge hasta que llega a destino final.
+        for i in range(contador, len(driver_ruta) - 1):
+            coord1 = driver_ruta[i]
+            coord2 = driver_ruta[i + 1]
+            distance = geopy.distance.distance(coord1, coord2).km
+            #suma la distancia por tramo que va recorriendo el paquete
+            distance_total += distance
+        print("Distancia paquete " + str(contador + 1) + ": " + str(distance_total) + " km")
+        lista_distancias_paquetes.append(distance_total)
+        contador += 1
+        distance_total = 0
+    contador_driver += 1
+
+
+suma = 0
+for element in lista_distancias_paquetes:
+    suma += element
+
+promedio = suma/len(lista_distancias_paquetes)
+
+print("Suma total distancias poaquetes: " + str(suma))
+print("Cantidad total de paquetes: " + str(len(lista_distancias_paquetes)))
+print("Promedio distancia recorrida por paquete: " + str(promedio) + " kms")
+
+
+
+
+
+
+    
