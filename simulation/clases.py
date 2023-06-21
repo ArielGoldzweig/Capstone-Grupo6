@@ -36,6 +36,8 @@ class Driver:
         self.peso -= ecommerce.peso
         self.volumen -= ecommerce.volumen
         self.ruta.remove(ecommerce.ubicacion)
+        self.ecommerce.remove(ecommerce)
+        self.tiempo -= random.randint(8, 15)
         # self.ubicacion_actual = ecommerce.ubicacion
     
     def agregar_delivery(self, paquete):
