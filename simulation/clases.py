@@ -26,7 +26,7 @@ class Driver:
     def agregar_ecommerce(self, ecommerce):
         self.peso += ecommerce.peso
         self.volumen += ecommerce.volumen
-        self.ruta.append(ecommerce.ubicacion)
+        self.ruta.insert(-1, ecommerce.ubicacion)
         self.ecommerce.append(ecommerce)
         self.tiempo += random.randint(8, 15)
         

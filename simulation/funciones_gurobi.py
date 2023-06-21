@@ -99,7 +99,7 @@ def distance_driver(driver):
     distance = 0
     for j in range(len(driver.ruta)):
         if j != len(driver.ruta) - 1:
-            distance += geopy.distance.geodesic(driver.ruta[j], driver.ruta[j+1]).km
+            distance += geopy.distance.geodesic(driver.ruta[j], driver.ruta[j+1]).km * 2
     return distance
 
 
@@ -109,7 +109,7 @@ def time_drivers(drivers):
         d.tiempo = 0
         for k in range(len(d.ruta) - 2):
             d.tiempo += np.random.uniform(8, 15)
-        tiempo_recoleccion = ((dis*2)/30)*60
+        tiempo_recoleccion = ((dis)/30)*60
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
@@ -136,6 +136,8 @@ def best_removal(driver, ecommerces):
     original_distance = distance_driver(driver)
     original_route = deepcopy(driver.ruta)
     best_diference_length = 0
+    
+    value_return = None
 
     for k in range(1, len(driver.ruta)-1):
         driver.ruta.pop(k)
@@ -144,67 +146,52 @@ def best_removal(driver, ecommerces):
         new_diference_length = original_distance - new_distance
         if (new_diference_length > best_diference_length):
             best_diference_length = new_diference_length
-            best_removal = k
             value_return = original_route[k]
         driver.ruta = deepcopy(original_route)
     
-    for e in ecommerces:
-        if e.ubicacion == value_return:
-            weight = e.peso
-            volume = e.volumen
-    driver.ruta.pop(best_removal)
-    driver.peso -= weight
-    driver.volumen -= volume
-    driver.tiempo -= random.randint(8, 15)
-    min_distance_gurobi(driver)
+    if value_return != None:
+        for e in ecommerces:
+            if e.ubicacion == value_return:
+                ecom_remove = e
 
-    return value_return, weight, volume
+        driver.eliminar_ecommerce(ecom_remove)
+        min_distance_gurobi(driver)
+
+        return ecom_remove
+
+    return None
 
 
-def best_insert(drivers, new_point, weigth, volume):
+def best_insert(drivers, ecom_remove):
     min_increment_distance = float('inf')
     best_list = []
-    # while len(best_list) < 4:
     for d in drivers:
         if d.tiempo < 80:
             new_weigth = 0
             new_volume = 0
-            # if d != driver and d not in best_list:
             if d not in best_list:
-                new_weigth = d.peso + weigth
-                new_volume = d.volumen + volume
+                new_weigth = d.peso + ecom_remove.peso
+                new_volume = d.volumen + ecom_remove.volumen
                 if new_weigth < 450 and new_volume < 2 and len(d.ruta) < 9:
                     original_distance = distance_driver(d)
-                    d.ruta.insert(-1, new_point)
+                    d.ruta.insert(-1, ecom_remove.ubicacion)
                     min_distance_gurobi(d)
                     new_distance = distance_driver(d)
                     difference_distance = new_distance - original_distance
                     if(difference_distance < min_increment_distance):
-                        # dis = difference_distance - min_increment_distance
                         min_increment_distance = difference_distance
                         best_driver = d
-                        
-                    d.ruta.remove(new_point)
-                    
-        # best_list.append(best_driver)
-
-    # driver_take = random.choice(best_list)
+                    d.ruta.remove(ecom_remove.ubicacion)
     try:
-        
-        
         driver_take = best_driver
-        driver_take.ruta.insert(-1, new_point)
+        # driver_take.ruta.insert(-1, new_point)
+        driver_take.agregar_ecommerce(ecom_remove)
         min_distance_gurobi(driver_take)
-        driver_take.peso += weigth
-        driver_take.volumen += volume
-        driver_take.tiempo += random.randint(8, 15)
+
         if driver_take.tiempo < 90:
             return driver_take
         else:
-            driver_take.ruta.remove(new_point)
-            driver_take.peso -= weigth
-            driver_take.volumen -= volume
-            driver_take.tiempo -= random.randint(8, 15)
+            driver_take.eliminar_ecommerce(ecom_remove)
             return None
     except:
         return None
@@ -214,10 +201,12 @@ def remove_until_time(drivers, ecommerces):
     drivers = order_drivers_time(drivers)
     not_asign_list = []
     for d in drivers:
-        # if d.tiempo > 90:
         while d.tiempo > 90:
-            point, weight, volume = best_removal(d, ecommerces)
-            not_asign_list.append([point, weight, volume])
+            drivers = time_drivers(drivers)
+            ecom = best_removal(d, ecommerces)
+            if ecom == None:
+                break
+            not_asign_list.append(ecom)
     return not_asign_list
 
 
@@ -235,21 +224,25 @@ def insert_if_time(drivers, not_asign_list):
 
         no_insert = []
         if len(not_asign_list) > 0:
-            for new_point, weigth, volume in not_asign_list:
-                driver_take = best_insert(drivers, new_point, weigth, volume)
+            for ecom in not_asign_list:
+                driver_take = best_insert(drivers, ecom)
                 if driver_take == None:
-                    no_insert.append([new_point, weigth, volume])
+                    no_insert.append([ecom])
             not_asign_list = deepcopy(no_insert)
     
     return not_asign_list
 
 
-# def remove_insert_if_time(lista_drivers, lista_ecommerces):
-#     lista_drivers = time_drivers(lista_drivers)
-#     not_asign = remove_until_time(lista_drivers, lista_ecommerces)
-#     not_asign = insert_if_time(lista_drivers, not_asign)
+def remove_insert_if_time(lista_drivers, lista_ecommerces):
+    lista_drivers = time_drivers(lista_drivers)
+    not_asign = remove_until_time(lista_drivers, lista_ecommerces)
+    not_asign = insert_if_time(lista_drivers, not_asign)
+    lista_drivers = order_drivers_time(lista_drivers)
+    for d in lista_drivers:
+        if d.tiempo > 90:
+            not_asign.append(best_removal(d, lista_ecommerces))
+    return not_asign
 
-#     return not_asign
 
 def have_time(drivers, ecommerces):
 
