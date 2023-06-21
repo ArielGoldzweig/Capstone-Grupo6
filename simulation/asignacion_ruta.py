@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, time_drivers, map_distance
 from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, improve_route_min_max_time, improve_have_time, order_drivers_time, have_time, remove_insert_if_time
+from funciones_gurobi import min_distance_gurobi, order_drivers_time, remove_until_time, insert_if_time
+from function_kpi import calculate_kpi_package
 
 # ------------- Cargar los datos --------------
 
@@ -151,29 +152,23 @@ for d in lista_drivers:
     min_distance_gurobi(d)
 
 
-# lista_drivers = improve_route_min_max_time(lista_drivers, list_ecommerces)
-# lista_drivers = improve_have_time(lista_drivers, list_ecommerces)
-
-# lista_drivers = time_drivers(lista_drivers)
-# lista_drivers = order_drivers_time(lista_drivers)
-# have_time(lista_drivers, lista_ecommerces)
-
-
-lista_no = remove_insert_if_time(lista_drivers, lista_ecommerces)
-print()
-print(lista_no, print(len(lista_no)))
+print(calculate_distance(lista_drivers))
 print()
 
-# have_time(lista_drivers, lista_ecommerces)
+
 
 lista_drivers = time_drivers(lista_drivers)
+not_asign = remove_until_time(lista_drivers, lista_ecommerces)
+not_asign = insert_if_time(lista_drivers, not_asign)
+print()
+print('Paquetes no entregados', not_asign, len(not_asign))
+print()
+lista_drivers = order_drivers_time(lista_drivers)
+paquetes = 0
 for d in lista_drivers:
     dis = distance_driver(d)
+    paquetes += (len(d.ruta) - 2)
     print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
+print(paquetes)
 
-# print()
-# print(f'La nueva distancia minima es {calculate_distance(lista_drivers)}')
-# print()
-
-
-# map_distance(lista_drivers, 'simulation/maps/asignacionGurobi.html')
+map_distance(lista_drivers, 'simulation/maps/asignacionGurobi.html')

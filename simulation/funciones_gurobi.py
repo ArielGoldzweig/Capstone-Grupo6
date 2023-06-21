@@ -12,7 +12,33 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
+def callback(model, where):
+
+    time_from_best = 1
+    epsilon_to_compare_gap = 1
+    # Initialize data passed to the callback function via model._data
+    model._gap, model._time_to_best = 1.0, float("inf")
+    if where == GRB.Callback.MIP:
+        runtime = model.cbGet(GRB.Callback.RUNTIME)
+        incumbent = model.cbGet(GRB.Callback.MIP_OBJBST)
+        bound = model.cbGet(GRB.Callback.MIP_OBJBND)
+        gap = abs((bound - incumbent) / incumbent)
+
+        # If an incumbent solution is found
+        if incumbent != GRB.INFINITY:
+            # If the current gap is different from the previous gap, update
+            # the time_to_best and the gap
+            if (model._gap - gap) > epsilon_to_compare_gap:
+                model._time_to_best = runtime
+                model._gap = gap
+            # If the current gap is the same as the previous gap for more than
+            # the time_from_best, terminate
+            elif runtime - model._time_to_best > time_from_best:
+                model.terminate()
+
+
 def min_distance_gurobi(d):
+
     n = len(d.ruta)
     G = nx.complete_graph(n, nx.DiGraph())
 
@@ -26,7 +52,7 @@ def min_distance_gurobi(d):
 
 
     m = gp.Model()
-    x = m.addVars(G.edges,vtype=GRB.BINARY)
+    x = m.addVars(G.edges, vtype=GRB.BINARY)
 
     m.setObjective( gp.quicksum( G.edges[i,j]['length'] * x[i,j] for i,j in G.edges ), GRB.MINIMIZE )
 
@@ -44,7 +70,7 @@ def min_distance_gurobi(d):
 
     # Agregar GAP de 5%
     # VER TIEMPO EN LUGAR DE GAP
-    m.setParam('MIPGap', 0.05)
+    # m.setParam('MIPGap', 0.05)
 
     m.optimize()
 
@@ -83,10 +109,11 @@ def time_drivers(drivers):
         d.tiempo = 0
         for k in range(len(d.ruta) - 2):
             d.tiempo += np.random.uniform(8, 15)
-        tiempo_recoleccion = (dis/50)*60
+        tiempo_recoleccion = ((dis*2)/30)*60
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
+
 
 def time_drivers_delivery(drivers):
     for d in drivers:
@@ -98,6 +125,7 @@ def time_drivers_delivery(drivers):
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
+
 
 def order_drivers_time(drivers):
     drivers.sort(key=lambda x: x.tiempo)
@@ -136,84 +164,92 @@ def best_removal(driver, ecommerces):
 def best_insert(drivers, new_point, weigth, volume):
     min_increment_distance = float('inf')
     best_list = []
-    while len(best_list) < 4:
-        for d in drivers:
-            if d.tiempo < 90:
-                new_weigth = 0
-                new_volume = 0
-                # if d != driver and d not in best_list:
-                if d not in best_list:
-                    new_weigth = d.peso + weigth
-                    new_volume = d.volumen + volume
-                    if new_weigth < 450 and new_volume < 2 and len(d.ruta) < 9:
-                        original_distance = distance_driver(d)
-                        d.ruta.insert(-1, new_point)
-                        min_distance_gurobi(d)
-                        new_distance = distance_driver(d)
-                        difference_distance = new_distance - original_distance
-                        if(difference_distance < min_increment_distance):
-                            # dis = difference_distance - min_increment_distance
-                            min_increment_distance = difference_distance
-                            best_driver = d
-                            
-                        d.ruta.remove(new_point)
+    # while len(best_list) < 4:
+    for d in drivers:
+        if d.tiempo < 80:
+            new_weigth = 0
+            new_volume = 0
+            # if d != driver and d not in best_list:
+            if d not in best_list:
+                new_weigth = d.peso + weigth
+                new_volume = d.volumen + volume
+                if new_weigth < 450 and new_volume < 2 and len(d.ruta) < 9:
+                    original_distance = distance_driver(d)
+                    d.ruta.insert(-1, new_point)
+                    min_distance_gurobi(d)
+                    new_distance = distance_driver(d)
+                    difference_distance = new_distance - original_distance
+                    if(difference_distance < min_increment_distance):
+                        # dis = difference_distance - min_increment_distance
+                        min_increment_distance = difference_distance
+                        best_driver = d
+                        
+                    d.ruta.remove(new_point)
                     
-        best_list.append(best_driver)
+        # best_list.append(best_driver)
 
-    driver_take = random.choice(best_list)
-    driver_take.ruta.insert(-1, new_point)
-    min_distance_gurobi(driver_take)
-    driver_take.peso += weigth
-    driver_take.volumen += volume
-    driver_take.tiempo += random.randint(8, 15)
-
-    return driver_take
+    # driver_take = random.choice(best_list)
+    try:
+        
+        
+        driver_take = best_driver
+        driver_take.ruta.insert(-1, new_point)
+        min_distance_gurobi(driver_take)
+        driver_take.peso += weigth
+        driver_take.volumen += volume
+        driver_take.tiempo += random.randint(8, 15)
+        if driver_take.tiempo < 90:
+            return driver_take
+        else:
+            driver_take.ruta.remove(new_point)
+            driver_take.peso -= weigth
+            driver_take.volumen -= volume
+            driver_take.tiempo -= random.randint(8, 15)
+            return None
+    except:
+        return None
 
 
 def remove_until_time(drivers, ecommerces):
     drivers = order_drivers_time(drivers)
     not_asign_list = []
     for d in drivers:
-        if d.tiempo > 90:
-            while d.tiempo > 90:
-                point, weight, volume = best_removal(d, ecommerces)
-                not_asign_list.append([point, weight, volume])
+        # if d.tiempo > 90:
+        while d.tiempo > 90:
+            point, weight, volume = best_removal(d, ecommerces)
+            not_asign_list.append([point, weight, volume])
     return not_asign_list
 
 
 def insert_if_time(drivers, not_asign_list):
     lista_driver = deepcopy(drivers)
     
-    # for i in range(4):
-    no_insert = []
-    if len(not_asign_list) > 0:
-        for new_point, weigth, volume in not_asign_list:
-            driver_take = best_insert(drivers, new_point, weigth, volume)
-            if driver_take.tiempo > 100:
-                drivers = deepcopy(lista_driver)
-                no_insert.append([new_point, weigth, volume])
-                driver_take.peso -= weigth
-                driver_take.volumen -= volume
-                driver_take.tiempo -= random.randint(8, 15)
-                min_distance_gurobi(driver_take)
-            else:
-                lista_driver = deepcopy(drivers)
-        not_asign_list = deepcopy(no_insert)
+    while True:
+        stop = True
+        drivers = order_drivers_time(drivers)
+        for d in drivers:
+            if d.tiempo < 80:
+                stop = False
+        if len(not_asign_list) == 0 or stop:
+            break
+
+        no_insert = []
+        if len(not_asign_list) > 0:
+            for new_point, weigth, volume in not_asign_list:
+                driver_take = best_insert(drivers, new_point, weigth, volume)
+                if driver_take == None:
+                    no_insert.append([new_point, weigth, volume])
+            not_asign_list = deepcopy(no_insert)
     
     return not_asign_list
 
 
-def remove_insert_if_time(drivers, ecommerces):
-    for i in range(8):        
-        lista_drivers = time_drivers(drivers)
-        not_asign_list = remove_until_time(lista_drivers, ecommerces)
-        if len(not_asign_list) > 0:
-            lista_no = insert_if_time(lista_drivers, not_asign_list)
-        else:
-            return lista_no
-        not_asign_list = deepcopy(lista_no)
-    return lista_no
+# def remove_insert_if_time(lista_drivers, lista_ecommerces):
+#     lista_drivers = time_drivers(lista_drivers)
+#     not_asign = remove_until_time(lista_drivers, lista_ecommerces)
+#     not_asign = insert_if_time(lista_drivers, not_asign)
 
+#     return not_asign
 
 def have_time(drivers, ecommerces):
 
