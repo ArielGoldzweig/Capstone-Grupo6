@@ -227,7 +227,7 @@ def insert_if_time(drivers, not_asign_list):
             for ecom in not_asign_list:
                 driver_take = best_insert(drivers, ecom)
                 if driver_take == None:
-                    no_insert.append([ecom])
+                    no_insert.append(ecom)
             not_asign_list = deepcopy(no_insert)
     
     return not_asign_list
