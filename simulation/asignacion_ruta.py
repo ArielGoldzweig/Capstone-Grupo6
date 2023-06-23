@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
 from Opt2_function import opt2
-from funciones_gurobi import min_distance_gurobi, order_drivers_time, remove_insert_if_time, distance_driver, time_drivers
+from funciones_gurobi import min_distance_gurobi, order_drivers_time, remove_insert_if_time, distance_driver
 from function_kpi import calculate_kpi_package
 
 # ------------- Cargar los datos --------------
@@ -129,10 +129,10 @@ for i in range(df_delivery['id'].size):
     lista_paquetes.append(paquete)
 
 # ---------- Paquetes dia 1 ----------
-paquetes_dia_1 = lista_paquetes[:amountDays[0]]   
+lista_deliveries = lista_paquetes[:amountDays[0]]   
 
 # ---------- Agregar paquetes a los ecommerce para el dia 1 ----------
-for paquete in paquetes_dia_1:
+for paquete in lista_deliveries:
     for ecommerce in lista_ecommerces:
         if paquete.ecommerce == ecommerce.id:
             ecommerce.agregar_paquete(paquete)
@@ -152,12 +152,8 @@ for d in lista_drivers:
     min_distance_gurobi(d)
 
 
-print(calculate_distance(lista_drivers))
-print()
 
-
-
-not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, 90, 'e')
+not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, 90, 'e')
 print()
 print('Paquetes no entregados', not_asign, len(not_asign))
 print()

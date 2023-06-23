@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
 from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, improve_route_min_max_time, improve_have_time, order_drivers_time, have_time, time_drivers_delivery
+from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, order_drivers_time, have_time, time_drivers_delivery
 
 
 # ------------- Cargar los datos --------------
@@ -118,7 +118,7 @@ for i in range(df_delivery_day['id'].size):
     lista_paquetes.append(paquete)
 
 # ---------- Paquetes dia 1 ----------
-paquetes_dia_1 = lista_paquetes[:amountDays[0]]   
+lista_deliveries = lista_paquetes[:amountDays[0]]   
 
 
 
@@ -137,24 +137,16 @@ for d in lista_drivers:
     min_distance_gurobi(d)
 
 
-# lista_drivers = improve_route_min_max_time(lista_drivers, lista_paquetes)
-# # lista_drivers = improve_have_time(lista_drivers, list_ecommerces)
-
-# # lista_drivers = time_drivers(lista_drivers)
-# # lista_drivers = order_drivers_time(lista_drivers)
-# # have_time(lista_drivers, lista_ecommerces)
+not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
+print()
+print('Paquetes no entregados', not_asign, len(not_asign))
+print()
 
 
-# # lista_drivers = order_drivers_time(lista_drivers)
 lista_drivers = time_drivers_delivery(lista_drivers)
 for d in lista_drivers:
     dis = distance_driver(d)
     print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo/60} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
-
-
-# print()
-# print(f'La nueva distancia minima es {calculate_distance(lista_drivers)}')
-# print()
 
 
 map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
