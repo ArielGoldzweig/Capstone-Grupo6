@@ -170,11 +170,26 @@ def best_removal(driver, ecommerces, deliveries, del_ecom):
     return None
 
 
-def best_insert(drivers, ecom_remove, possible_time, del_ecom):
+def best_removal_delivery(driver, deliveries):
+    distance = 0
+    pos = None
+    for i in range(1, len(driver.ruta)-1):
+        dis = geopy.distance.geodesic(driver.ruta[i], driver.ruta[i+1]).km + geopy.distance.geodesic(driver.ruta[i], driver.ruta[i-1]).km
+        if distance < dis:
+            distance = dis
+            coord = driver.ruta[i]
+    
+    for d in deliveries:
+        if d.ubicacion == coord:
+            driver.eliminar_delivery(d)
+            return d
+
+
+def best_insert(drivers, ecom_remove, posible_time, del_ecom):
     min_increment_distance = float('inf')
     best_list = []
     for d in drivers:
-        if d.tiempo < possible_time - 10:
+        if d.tiempo < posible_time - 10:
             new_weigth = 0
             new_volume = 0
             if d not in best_list:
@@ -192,7 +207,6 @@ def best_insert(drivers, ecom_remove, possible_time, del_ecom):
                     d.ruta.remove(ecom_remove.ubicacion)
     try:
         driver_take = best_driver
-        # driver_take.ruta.insert(-1, new_point)
         if del_ecom == 'e':
             driver_take.agregar_ecommerce(ecom_remove)
         else:
@@ -200,7 +214,7 @@ def best_insert(drivers, ecom_remove, possible_time, del_ecom):
 
         min_distance_gurobi(driver_take)
 
-        if driver_take.tiempo < possible_time:
+        if driver_take.tiempo < posible_time:
             return driver_take
         else:
             if del_ecom == 'e':
@@ -217,8 +231,12 @@ def remove_until_time(drivers, ecommerces, deliveries, possible_time, del_ecom):
     not_asign_list = []
     for d in drivers:
         while d.tiempo > possible_time:
-            drivers = time_drivers(drivers)
-            ecom = best_removal(d, ecommerces, deliveries, del_ecom)
+            if del_ecom == 'e':
+                drivers = time_drivers(drivers)
+                ecom = best_removal(d, ecommerces, deliveries, del_ecom)
+            if del_ecom == 'd':
+                drivers = time_drivers_delivery(drivers)
+                ecom = best_removal_delivery(d, deliveries)
             if ecom == None:
                 break
             not_asign_list.append(ecom)
@@ -226,7 +244,6 @@ def remove_until_time(drivers, ecommerces, deliveries, possible_time, del_ecom):
 
 
 def insert_if_time(drivers, not_asign_list, possible_time, del_ecom):
-    lista_driver = deepcopy(drivers)
     
     while True:
         stop = True

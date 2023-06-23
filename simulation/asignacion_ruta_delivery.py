@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
 from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, order_drivers_time, have_time, time_drivers_delivery
+from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_removal_delivery
 
 
 # ------------- Cargar los datos --------------
@@ -143,10 +143,15 @@ print('Paquetes no entregados', not_asign, len(not_asign))
 print()
 
 
-lista_drivers = time_drivers_delivery(lista_drivers)
+# lista_drivers = time_drivers_delivery(lista_drivers)
+remove_d = best_removal_delivery(lista_drivers[-1], lista_deliveries)
+print()
+print(remove_d.ubicacion)
+print()
+
 for d in lista_drivers:
     dis = distance_driver(d)
     print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo/60} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
 
 
-map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
+# map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
