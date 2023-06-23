@@ -157,7 +157,7 @@ print()
 
 
 
-not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces)
+not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, 90, 'e')
 print()
 print('Paquetes no entregados', not_asign, len(not_asign))
 print()

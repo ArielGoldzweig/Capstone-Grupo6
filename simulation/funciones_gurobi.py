@@ -99,7 +99,7 @@ def distance_driver(driver):
     distance = 0
     for j in range(len(driver.ruta)):
         if j != len(driver.ruta) - 1:
-            distance += geopy.distance.geodesic(driver.ruta[j], driver.ruta[j+1]).km * 2
+            distance += geopy.distance.geodesic(driver.ruta[j], driver.ruta[j+1]).km * 1.4
     return distance
 
 
@@ -121,7 +121,7 @@ def time_drivers_delivery(drivers):
         d.tiempo = 0
         for k in range(len(d.ruta) - 2):
             d.tiempo += np.random.uniform(4, 8)
-        tiempo_recoleccion = (dis/50)*60
+        tiempo_recoleccion = (dis/30)*60
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
@@ -162,11 +162,11 @@ def best_removal(driver, ecommerces):
     return None
 
 
-def best_insert(drivers, ecom_remove):
+def best_insert(drivers, ecom_remove, possible_time, del_ecom):
     min_increment_distance = float('inf')
     best_list = []
     for d in drivers:
-        if d.tiempo < 80:
+        if d.tiempo < possible_time - 10:
             new_weigth = 0
             new_volume = 0
             if d not in best_list:
@@ -185,23 +185,30 @@ def best_insert(drivers, ecom_remove):
     try:
         driver_take = best_driver
         # driver_take.ruta.insert(-1, new_point)
-        driver_take.agregar_ecommerce(ecom_remove)
+        if del_ecom == 'e':
+            driver_take.agregar_ecommerce(ecom_remove)
+        else:
+            driver_take.agregar_delivery(ecom_remove)
+
         min_distance_gurobi(driver_take)
 
-        if driver_take.tiempo < 90:
+        if driver_take.tiempo < possible_time:
             return driver_take
         else:
-            driver_take.eliminar_ecommerce(ecom_remove)
+            if del_ecom == 'e':
+                driver_take.eliminar_ecommerce(ecom_remove)
+            else:
+                driver_take.eliminar_delivery(ecom_remove)
             return None
     except:
         return None
 
 
-def remove_until_time(drivers, ecommerces):
+def remove_until_time(drivers, ecommerces, possible_time):
     drivers = order_drivers_time(drivers)
     not_asign_list = []
     for d in drivers:
-        while d.tiempo > 90:
+        while d.tiempo > possible_time:
             drivers = time_drivers(drivers)
             ecom = best_removal(d, ecommerces)
             if ecom == None:
@@ -210,14 +217,14 @@ def remove_until_time(drivers, ecommerces):
     return not_asign_list
 
 
-def insert_if_time(drivers, not_asign_list):
+def insert_if_time(drivers, not_asign_list, possible_time, del_ecom):
     lista_driver = deepcopy(drivers)
     
     while True:
         stop = True
         drivers = order_drivers_time(drivers)
         for d in drivers:
-            if d.tiempo < 80:
+            if d.tiempo < possible_time - 10:
                 stop = False
         if len(not_asign_list) == 0 or stop:
             break
@@ -225,7 +232,7 @@ def insert_if_time(drivers, not_asign_list):
         no_insert = []
         if len(not_asign_list) > 0:
             for ecom in not_asign_list:
-                driver_take = best_insert(drivers, ecom)
+                driver_take = best_insert(drivers, ecom, possible_time, del_ecom)
                 if driver_take == None:
                     no_insert.append(ecom)
             not_asign_list = deepcopy(no_insert)
@@ -233,13 +240,13 @@ def insert_if_time(drivers, not_asign_list):
     return not_asign_list
 
 
-def remove_insert_if_time(lista_drivers, lista_ecommerces):
+def remove_insert_if_time(lista_drivers, lista_ecommerces, possible_time, del_ecom):
     lista_drivers = time_drivers(lista_drivers)
-    not_asign = remove_until_time(lista_drivers, lista_ecommerces)
-    not_asign = insert_if_time(lista_drivers, not_asign)
+    not_asign = remove_until_time(lista_drivers, lista_ecommerces, possible_time)
+    not_asign = insert_if_time(lista_drivers, not_asign, possible_time, del_ecom)
     lista_drivers = order_drivers_time(lista_drivers)
     for d in lista_drivers:
-        if d.tiempo > 90:
+        if d.tiempo > possible_time:
             not_asign.append(best_removal(d, lista_ecommerces))
     return not_asign
 
