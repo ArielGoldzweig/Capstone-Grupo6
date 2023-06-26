@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
 from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_removal_delivery, remove_until_time
+from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_insert_delivery, remove_until_time
 
 
 # ------------- Cargar los datos --------------
@@ -34,7 +34,7 @@ for i in range(30):
     amountDays.append(value)
 
 # df_delivery_day = df_delivery[amountDays[0]+amountDays[1]:amountDays[0]+amountDays[1]+ amountDays[2]]
-df_delivery_day = df_delivery[:amountDays[0]]
+df_delivery_day = df_delivery[amountDays[0]+amountDays[1]:amountDays[0]+amountDays[1]+ amountDays[2]]
 
 
 

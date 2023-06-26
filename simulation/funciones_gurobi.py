@@ -172,21 +172,24 @@ def best_removal(driver, ecommerces, deliveries, del_ecom):
 
 def best_removal_delivery(driver, deliveries):
     distance = 0
-    pos = None
+    coord = None
     for i in range(1, len(driver.ruta)-1):
         dis = geopy.distance.geodesic(driver.ruta[i], driver.ruta[i+1]).km + geopy.distance.geodesic(driver.ruta[i], driver.ruta[i-1]).km
         if distance < dis:
             distance = dis
             coord = driver.ruta[i]
     
-    for d in deliveries:
-        if d.ubicacion == coord:
-            del_remove = d
-    driver.eliminar_delivery(del_remove)
+    if coord != None:
+        for d in deliveries:
+            if d.ubicacion == coord:
+                del_remove = d
+        driver.eliminar_delivery(del_remove)
 
-    min_distance_gurobi(driver)
+        min_distance_gurobi(driver)
 
-    return del_remove
+        return del_remove
+
+    return None
 
 
 def best_insert(drivers, ecom_remove, posible_time, del_ecom):
