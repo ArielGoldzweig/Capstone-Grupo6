@@ -29,8 +29,6 @@ class Driver:
         self.ruta.insert(-1, ecommerce.ubicacion)
         self.ecommerce.append(ecommerce)
         self.tiempo += random.randint(8, 15)
-        
-        # self.ubicacion_actual = ecommerce.ubicacion
     
     def eliminar_ecommerce(self, ecommerce):
         self.peso -= ecommerce.peso
@@ -49,8 +47,8 @@ class Driver:
     def eliminar_delivery(self, paquete):
         self.peso -= paquete.peso
         self.volumen -= paquete.volumen
-        self.ruta.append(paquete.ubicacion)
-        self.deliveries.append(paquete)
+        self.ruta.remove(paquete.ubicacion)
+        self.deliveries.remove(paquete)
         self.tiempo -= random.randint(4, 8)
 
 

@@ -111,7 +111,7 @@ def time_drivers(drivers):
         d.tiempo = 0
         for k in range(len(d.ruta) - 2):
             d.tiempo += np.random.uniform(8, 15)
-        tiempo_recoleccion = ((dis)/30)*60
+        tiempo_recoleccion = ((dis)/40)*60
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
@@ -123,7 +123,7 @@ def time_drivers_delivery(drivers):
         d.tiempo = 0
         for k in range(len(d.ruta) - 2):
             d.tiempo += np.random.uniform(4, 8)
-        tiempo_recoleccion = (dis/30)*60
+        tiempo_recoleccion = (dis/40)*60
         d.tiempo += tiempo_recoleccion
     drivers.sort(key=lambda x: x.tiempo)
     return drivers
@@ -181,8 +181,12 @@ def best_removal_delivery(driver, deliveries):
     
     for d in deliveries:
         if d.ubicacion == coord:
-            driver.eliminar_delivery(d)
-            return d
+            del_remove = d
+    driver.eliminar_delivery(del_remove)
+
+    min_distance_gurobi(driver)
+    
+    return del_remove
 
 
 def best_insert(drivers, ecom_remove, posible_time, del_ecom):

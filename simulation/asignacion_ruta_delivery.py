@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
 from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_removal_delivery
+from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_removal_delivery, remove_until_time
 
 
 # ------------- Cargar los datos --------------
@@ -33,7 +33,10 @@ for i in range(30):
     value = days.count(i + 1)
     amountDays.append(value)
 
+# df_delivery_day = df_delivery[amountDays[0]+amountDays[1]:amountDays[0]+amountDays[1]+ amountDays[2]]
 df_delivery_day = df_delivery[:amountDays[0]]
+
+
 
 # Creamos una columna que son las dimensiones en m3
 df_delivery_day['dimensiones'] = df_delivery_day['x1 (largo en cm)']/100 * df_delivery_day['x2 (ancho en cm)']/100 * df_delivery_day['x3 (alto en cm)']/100 
@@ -112,13 +115,13 @@ for i in range(df_ecommerce['id'].size):
     lista_ecommerces.append(ecommerce)
 
 # ----------  Instanciar los paquetes ---------- 
-lista_paquetes = []
+lista_deliveries = []
 for i in range(df_delivery_day['id'].size):
     paquete = Paquete(df_delivery_day['id'].iat[i], df_delivery_day['weight (kg)'].iat[i], [df_delivery_day['latitude'].iat[i], df_delivery_day['longitude'].iat[i]], df_delivery_day['x1 (largo en cm)'].iat[i], df_delivery_day['x2 (ancho en cm)'].iat[i], df_delivery_day['x3 (alto en cm)'].iat[i], df_delivery_day['delivery_day'].iat[i].day, df_delivery_day['e-commerce_id'].iat[i])
-    lista_paquetes.append(paquete)
+    lista_deliveries.append(paquete)
 
 # ---------- Paquetes dia 1 ----------
-lista_deliveries = lista_paquetes[:amountDays[0]]   
+# lista_deliveries = lista_paquetes  
 
 
 
@@ -128,7 +131,7 @@ lista_deliveries = lista_paquetes[:amountDays[0]]
 for i in range(len(lista_drivers)):
     for punto in puntos:
         if x[i, punto].X == 1:
-            lista_drivers[i].agregar_delivery(lista_paquetes[punto])
+            lista_drivers[i].agregar_delivery(lista_deliveries[punto])
     lista_drivers[i].ruta.append(lista_centros[-1].ubicacion)
     lista_drivers[i].ruta.insert(0, lista_drivers[i].origen)
 
@@ -137,21 +140,20 @@ for d in lista_drivers:
     min_distance_gurobi(d)
 
 
-not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
+lista_drivers = time_drivers_delivery(lista_drivers)
+print('aaa')
+not_asign = remove_until_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
 print()
 print('Paquetes no entregados', not_asign, len(not_asign))
 print()
 
 
-# lista_drivers = time_drivers_delivery(lista_drivers)
-remove_d = best_removal_delivery(lista_drivers[-1], lista_deliveries)
-print()
-print(remove_d.ubicacion)
-print()
 
+paquetes = 0
 for d in lista_drivers:
     dis = distance_driver(d)
-    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo/60} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
-
+    paquetes += (len(d.ruta) - 2)
+    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
+print(paquetes)
 
 # map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
