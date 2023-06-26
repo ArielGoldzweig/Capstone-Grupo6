@@ -141,8 +141,9 @@ for d in lista_drivers:
 
 
 lista_drivers = time_drivers_delivery(lista_drivers)
-print('aaa')
-not_asign = remove_until_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
+# print('aaa')
+# not_asign = remove_until_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
+not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, 360, 'd')
 print()
 print('Paquetes no entregados', not_asign, len(not_asign))
 print()

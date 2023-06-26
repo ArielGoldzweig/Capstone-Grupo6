@@ -185,13 +185,17 @@ def best_removal_delivery(driver, deliveries):
     driver.eliminar_delivery(del_remove)
 
     min_distance_gurobi(driver)
-    
+
     return del_remove
 
 
 def best_insert(drivers, ecom_remove, posible_time, del_ecom):
     min_increment_distance = float('inf')
     best_list = []
+    if del_ecom == 'e':
+        max_len = 9
+    else:
+        max_len = 60
     for d in drivers:
         if d.tiempo < posible_time - 10:
             new_weigth = 0
@@ -199,7 +203,7 @@ def best_insert(drivers, ecom_remove, posible_time, del_ecom):
             if d not in best_list:
                 new_weigth = d.peso + ecom_remove.peso
                 new_volume = d.volumen + ecom_remove.volumen
-                if new_weigth < 450 and new_volume < 2 and len(d.ruta) < 9:
+                if new_weigth < 450 and new_volume < 2 and len(d.ruta) < max_len:
                     original_distance = distance_driver(d)
                     d.ruta.insert(-1, ecom_remove.ubicacion)
                     min_distance_gurobi(d)
@@ -228,7 +232,37 @@ def best_insert(drivers, ecom_remove, posible_time, del_ecom):
             return None
     except:
         return None
+    
+def best_insert_delivery(drivers, del_remove):
+    min_increment_distance = float('inf')
+    best_list = []
 
+    for d in drivers:
+        if d.tiempo < 350:
+            new_weigth = 0
+            new_volume = 0
+            if d not in best_list:
+                new_weigth = d.peso + del_remove.peso
+                new_volume = d.volumen + del_remove.volumen
+                if new_weigth < 450 and new_volume < 2 and len(d.ruta) < 60:
+                    for i in range(len(d.ruta)-1):
+                        distance = geopy.distance.geodesic(d.ruta[i], del_remove.ubicacion).km + geopy.distance.geodesic(del_remove.ubicacion, d.ruta[i+1]).km
+                        if distance < min_increment_distance:
+                            min_increment_distance = distance
+                            driver_take = d
+    try:
+        driver_take.agregar_delivery(del_remove)
+
+        min_distance_gurobi(driver_take)
+
+        if driver_take.tiempo < 360:
+            return driver_take
+        else:
+            driver_take.eliminar_delivery(del_remove)
+            return None
+    except:
+        return None    
+    
 
 def remove_until_time(drivers, ecommerces, deliveries, possible_time, del_ecom):
     drivers = order_drivers_time(drivers)
@@ -261,7 +295,11 @@ def insert_if_time(drivers, not_asign_list, possible_time, del_ecom):
         no_insert = []
         if len(not_asign_list) > 0:
             for ecom in not_asign_list:
-                driver_take = best_insert(drivers, ecom, possible_time, del_ecom)
+                if del_ecom == 'e':
+                    driver_take = best_insert(drivers, ecom, possible_time, del_ecom)
+                elif del_ecom == 'd':   
+                    driver_take = best_insert_delivery(drivers, ecom)
+
                 if driver_take == None:
                     no_insert.append(ecom)
             not_asign_list = deepcopy(no_insert)
@@ -272,7 +310,7 @@ def insert_if_time(drivers, not_asign_list, possible_time, del_ecom):
 def remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, possible_time, del_ecom):
     if del_ecom == 'e':
         lista_drivers = time_drivers(lista_drivers)
-    else:
+    if del_ecom == 'd':
         lista_drivers = time_drivers_delivery(lista_drivers)
     
     not_asign = remove_until_time(lista_drivers, lista_ecommerces, lista_deliveries, possible_time, del_ecom)
