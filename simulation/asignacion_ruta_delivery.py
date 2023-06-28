@@ -10,8 +10,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from funciones import calculate_distance, map_distance
-from Opt2_function import opt2, distance_driver
-from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_insert_delivery, remove_until_time
+from Opt2_function import opt2
+from funciones_gurobi import min_distance_gurobi, remove_insert_if_time, time_drivers_delivery, best_insert_delivery, remove_until_time, distance_driver
 
 
 # ------------- Cargar los datos --------------
@@ -33,8 +33,8 @@ for i in range(30):
     value = days.count(i + 1)
     amountDays.append(value)
 
+df_delivery_day = df_delivery[:amountDays[0]]
 # df_delivery_day = df_delivery[amountDays[0]+amountDays[1]:amountDays[0]+amountDays[1]+ amountDays[2]]
-df_delivery_day = df_delivery[amountDays[0]+amountDays[1]:amountDays[0]+amountDays[1]+ amountDays[2]]
 
 
 
@@ -154,7 +154,7 @@ paquetes = 0
 for d in lista_drivers:
     dis = distance_driver(d)
     paquetes += (len(d.ruta) - 2)
-    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
+    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {round(d.peso, 2)} ---- Dimensiones {round(d.volumen, 2)} ---- Holgura tiempo {round(360-d.tiempo, 2)}')
 print(paquetes)
 
-# map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
+map_distance(lista_drivers, 'simulation/maps/asignacionGurobiDeliveries.html')
