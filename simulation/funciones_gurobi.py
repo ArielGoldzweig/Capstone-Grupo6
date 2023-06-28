@@ -262,7 +262,7 @@ def best_insert_delivery(drivers, del_remove):
             return driver_take
         else:
             driver_take.eliminar_delivery(del_remove)
-            return None
+        return None
     except:
         return None    
     
@@ -325,6 +325,10 @@ def remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, pos
                 not_asign.append(best_removal(d, lista_ecommerces, lista_deliveries, del_ecom))
             if del_ecom == 'd':
                 not_asign.append(best_removal_delivery(d, lista_deliveries))
+
+    if len(not_asign) > 0 and del_ecom == 'd':
+        not_asign = insert_if_time(lista_drivers, not_asign, possible_time, del_ecom)
+        
     return not_asign
 
 
