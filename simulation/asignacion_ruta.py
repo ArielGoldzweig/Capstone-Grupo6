@@ -155,15 +155,19 @@ for d in lista_drivers:
 
 not_asign = remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, 90, 'e')
 print()
-print('Paquetes no entregados', not_asign, len(not_asign))
+paquetes_no_entregados = 0
+for e in not_asign:
+    paquetes_no_entregados += len(e.paquetes)
+print('Paquetes no entregados', paquetes_no_entregados)
 print()
 
 lista_drivers = order_drivers_time(lista_drivers)
 paquetes = 0
 for d in lista_drivers:
     dis = distance_driver(d)
-    paquetes += (len(d.ruta) - 2)
-    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {d.peso} ---- Dimensiones {d.volumen}')
+    for e in d.ecommerce:
+        paquetes += len(e.paquetes)
+    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {round(d.peso, 2)} ---- Dimensiones {round(d.volumen, 2)} ---- Holgura tiempo {round(90-d.tiempo, 2)}')
 print(paquetes)
 
 map_distance(lista_drivers, 'simulation/maps/asignacionGurobi.html')
