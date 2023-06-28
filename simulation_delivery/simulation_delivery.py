@@ -4,7 +4,7 @@ import random
 import folium
 from folium.features import DivIcon
 from clases import Driver, Paquete, Ecommerce, Centro
-from funciones import calculate_distance, distance_driver, improve_route_aleatory, plot_improvement, generate_colors
+from funciones import calculate_distance, distance_driver, improve_route_aleatory, plot_improvement, generate_colors, time_drivers_delivery, order_drivers_time
 
 
 # ------------- Cargar los datos --------------
@@ -51,6 +51,13 @@ for i in range(df_delivery['id'].size):
     paquetes.append(paquete)
 
 # ---------- Paquetes dia 1 ----------
+
+# dia = 2
+# index = 0
+# for i in range(dia):
+#     index += amountDays[i]
+
+# paquetes_dia = paquetes[index:index+amountDays[dia]]
 paquetes_dia = paquetes[:amountDays[0]]   
 
 # ---------- Agregar paquetes a los ecommerce para el dia 1 ----------
@@ -134,42 +141,86 @@ for j in range(len(drivers)):
 # # # ----- Generamos los colores --------
 # # colors = generate_colors(len(drivers))
 
+def remove(driver, deliveries):
+    distance = 0
+    coord = None
+    for i in range(1, len(driver.ruta)-1):
+        dis = geopy.distance.geodesic(driver.ruta[i], driver.ruta[i+1]).km + geopy.distance.geodesic(driver.ruta[i], driver.ruta[i-1]).km
+        if distance < dis:
+            distance = dis
+            coord = driver.ruta[i]
+    
+    if coord != None:
+        for d in deliveries:
+            if d.destino == coord:
+                del_remove = d
+        driver.eliminar_paquete(del_remove)
+        return del_remove
+    return None
 
+drivers = time_drivers_delivery(drivers)
+
+not_asign_list = []
+for d in drivers:
+    while d.tiempo > 360:
+        drivers = time_drivers_delivery(drivers)
+        ecom = remove(d, paquetes_dia)
+        if ecom == None:
+            break
+        not_asign_list.append(ecom)
+
+for d in drivers:
+    if d.tiempo > 360:
+        drivers = time_drivers_delivery(drivers)
+        ecom = remove(d, paquetes_dia)
+        if ecom == None:
+            break
+        not_asign_list.append(ecom)
+
+print('Paquetes no entregados', not_asign_list, len(not_asign_list))
 best_distance = calculate_distance(drivers)
-print(best_distance)
+print(f'DIstancia Total {best_distance}')
+
+drivers = order_drivers_time(drivers)
+paquetes = 0
+for d in drivers:
+    dis = distance_driver(d)
+    paquetes += (len(d.ruta) - 2)
+    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {round(d.peso, 2)} ---- Dimensiones {round(d.volumen, 2)} ---- Holgura tiempo {round(360-d.tiempo, 2)}')
+print(f'Paquetes entregados {paquetes}')
 
 # --------------------------------------------------------------------------------------
 #                     Mejorar aleatoriamente el caso base
 
-driver_improve = improve_route_aleatory(drivers, paquetes, best_distance)
-best_distance = calculate_distance(driver_improve[0])
-# plot_improvement(driver_improve[1], driver_improve[2], 'Aleatory improvement', driver_improve[3])
+# driver_improve = improve_route_aleatory(drivers, paquetes, best_distance)
+# best_distance = calculate_distance(driver_improve[0])
+# # plot_improvement(driver_improve[1], driver_improve[2], 'Aleatory improvement', driver_improve[3])
 
-colors = generate_colors(len(drivers))
-# ---------- Creamos el mapa ----------
-coordinate_center = [-33.4369436, -70.634449]
-m = folium.Map(location=coordinate_center)
+# colors = generate_colors(len(drivers))
+# # ---------- Creamos el mapa ----------
+# coordinate_center = [-33.4369436, -70.634449]
+# m = folium.Map(location=coordinate_center)
 
-drivers = driver_improve[0]
+# drivers = driver_improve[0]
 
-for i in range(len(drivers)):
-    folium.CircleMarker(drivers[i].origen, color='black', radius=4, fill=True).add_to(m) 
-    folium.PolyLine(drivers[i].ruta, color=colors[i], weight=3, opacity=1).add_to(m)
+# for i in range(len(drivers)):
+#     folium.CircleMarker(drivers[i].origen, color='black', radius=4, fill=True).add_to(m) 
+#     folium.PolyLine(drivers[i].ruta, color=colors[i], weight=3, opacity=1).add_to(m)
 
 
-m.save("simulation_delivery/maps/improve_aleatory.html")
+# # m.save("simulation_delivery/maps/improve_aleatory.html")
 
- # ----------------------------------------------------------------------------
-# Imprimir tiempos
+#  # ----------------------------------------------------------------------------
+# # Imprimir tiempos
 
-t_prom = 0
-d_prom = 0
-for d in drivers:
-    dis = distance_driver(d)
-    tiempo_recoleccion = (dis/30)*60
-    print(f'{d.id} ---- Distancia {dis} ---- tiempo {d.tiempo + tiempo_recoleccion}')
-    t_prom += d.tiempo + tiempo_recoleccion
-    d_prom += dis
-    print()
-print(f'Tiempo promedio = {t_prom/18}')
-print(f'Distancia promedio = {d_prom/18}')
+# t_prom = 0
+# d_prom = 0
+# for d in drivers:
+#     dis = distance_driver(d)
+#     tiempo_recoleccion = (dis/30)*60
+#     print(f'{d.id} ---- Distancia {dis} ---- tiempo {d.tiempo + tiempo_recoleccion}')
+#     t_prom += d.tiempo + tiempo_recoleccion
+#     d_prom += dis
+#     print()
+# print(f'Tiempo promedio = {t_prom/18}')
+# print(f'Distancia promedio = {d_prom/18}')

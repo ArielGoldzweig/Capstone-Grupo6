@@ -4,8 +4,9 @@ import random
 import folium
 from folium.features import DivIcon
 from clases import Driver, Paquete, Ecommerce, Centro
-from funciones import calculate_distance, improve_route_aleatory, map_distance, generate_colors, swap_ecommerce, plot_improvement, time_drivers, improve_route_min_max_time
+from funciones import calculate_distance, improve_route_aleatory, map_distance, generate_colors, swap_ecommerce, plot_improvement, improve_route_min_max_time
 from Opt2_function import distance_driver, opt2
+from funciones_gurobi import min_distance_gurobi, order_drivers_time, remove_insert_if_time, time_drivers, remove_until_time
 
 # ------------- Cargar los datos --------------
 
@@ -129,12 +130,57 @@ for j in range(len(drivers)):
     drivers[j].ruta.insert(0, drivers[j].origen)
     drivers[j].ruta.append(centro)
 
+
 # ----- Generamos los colores --------
 colors = generate_colors(len(drivers))
 
+def remove(driver, deliveries):
+    distance = 0
+    coord = None
+    for i in range(1, len(driver.ruta)-1):
+        dis = geopy.distance.geodesic(driver.ruta[i], driver.ruta[i+1]).km + geopy.distance.geodesic(driver.ruta[i], driver.ruta[i-1]).km
+        if distance < dis:
+            distance = dis
+            coord = driver.ruta[i]
+    
+    if coord != None:
+        for d in deliveries:
+            if d.ubicacion == coord:
+                del_remove = d
+        driver.eliminar_ecommerce(del_remove)
+        return del_remove
+    return None
 
+drivers = time_drivers(drivers)
+
+not_asign_list = []
+for d in drivers:
+    while d.tiempo > 90:
+        drivers = time_drivers(drivers)
+        ecom = remove(d, ecommerces)
+        if ecom == None:
+            break
+        not_asign_list.append(ecom)
+
+for d in drivers:
+    if d.tiempo > 90:
+        drivers = time_drivers(drivers)
+        ecom = remove(d, ecommerces)
+        if ecom == None:
+            break
+        not_asign_list.append(ecom)
 best_distance = calculate_distance(drivers)
-# print(best_distance)
+
+print(not_asign_list)
+# drivers = time_drivers(drivers)
+paquetes = 0
+for d in drivers:
+    dis = distance_driver(d)
+    for e in d.ecommerce:
+        paquetes += len(e.paquetes)
+    print(f'{d.id} --> Distancia {dis} ---- Tiempo {d.tiempo} ---- N Paquetes {len(d.ruta) - 2} ---- Peso {round(d.peso, 2)} ---- Dimensiones {round(d.volumen, 2)} ---- Holgura tiempo {round(90-d.tiempo, 2)}')
+print(paquetes)
+print(best_distance)
 
 # --------------------------------------------------------------------------------------
 #                     Mejorar aleatoriamente el caso base
@@ -174,17 +220,17 @@ best_distance = calculate_distance(drivers)
 
 # --------------------------------------------------------------------------------------
 #                  DRIVER IMPROVE CHOOSING DRIVERS WITH MORE AND LESS TIME
-driver_improve = improve_route_aleatory(drivers, ecommerces, best_distance)
-drivers = driver_improve[0]
+# driver_improve = improve_route_aleatory(drivers, ecommerces, best_distance)
+# drivers = driver_improve[0]
 
-print()
-print('TIEMPOOOO')
-print()
-driver_improve = improve_route_min_max_time(drivers, ecommerces, best_distance)
-best_distance = calculate_distance(driver_improve)
-print(f'BEST DISTANCE = {best_distance}')
-for d in drivers:
-    print(f'{d.id} ---- tiempo {d.tiempo}')
+# print()
+# print('TIEMPOOOO')
+# print()
+# driver_improve = improve_route_min_max_time(drivers, ecommerces, best_distance)
+# best_distance = calculate_distance(driver_improve)
+# print(f'BEST DISTANCE = {best_distance}')
+# for d in drivers:
+#     print(f'{d.id} ---- tiempo {d.tiempo}')
 
 
 

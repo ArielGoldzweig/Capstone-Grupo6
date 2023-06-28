@@ -169,6 +169,21 @@ def improve_route_aleatory(drivers, paqutes, best_distance):
 def distance(value1, value2):
     return geopy.distance.geodesic(value1, value2).km
 
+def time_drivers_delivery(drivers):
+    for d in drivers:
+        dis = distance_driver(d)
+        d.tiempo = 0
+        for k in range(len(d.ruta) - 2):
+            d.tiempo += np.random.uniform(4, 8)
+        tiempo_recoleccion = (dis/40)*60
+        d.tiempo += tiempo_recoleccion
+    drivers.sort(key=lambda x: x.tiempo)
+    return drivers
+
+def order_drivers_time(drivers):
+    drivers.sort(key=lambda x: x.tiempo)
+    return drivers
+
 
 def opt2(tour):
     n = len(tour) - 1

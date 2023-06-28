@@ -34,7 +34,14 @@ class Driver:
         self.volumen += paquete.volumen
         self.ruta.append(paquete.destino)
         self.ecommerce.append(paquete)
-        self.tiempo += random.randint(4, 6)
+        self.tiempo += random.randint(4, 8)
+    
+    def eliminar_paquete(self, paquete):
+        self.peso += paquete.peso
+        self.volumen += paquete.volumen
+        self.ruta.remove(paquete.destino)
+        self.ecommerce.remove(paquete)
+        self.tiempo -= random.randint(4, 8)
 
 
 class Ecommerce:
