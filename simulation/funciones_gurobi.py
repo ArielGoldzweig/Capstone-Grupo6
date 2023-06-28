@@ -320,8 +320,11 @@ def remove_insert_if_time(lista_drivers, lista_ecommerces, lista_deliveries, pos
     not_asign = insert_if_time(lista_drivers, not_asign, possible_time, del_ecom)
     lista_drivers = order_drivers_time(lista_drivers)
     for d in lista_drivers:
-        if d.tiempo > possible_time:
-            not_asign.append(best_removal(d, lista_ecommerces, lista_deliveries, del_ecom))
+        while d.tiempo > possible_time:
+            if del_ecom == 'e':
+                not_asign.append(best_removal(d, lista_ecommerces, lista_deliveries, del_ecom))
+            if del_ecom == 'd':
+                not_asign.append(best_removal_delivery(d, lista_deliveries))
     return not_asign
 
 
