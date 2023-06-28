@@ -37,7 +37,7 @@ for i in range(30):
     amountDays.append(value)
 
 
-dia = 5
+dia = 15
 index = 0
 for i in range(dia):
     index += amountDays[i]
